@@ -6,23 +6,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>看天望氣</title>
     <link rel="icon" type="image/png" href="./icon-v2.png">
-    <link rel="apple-touch-icon" href="./icon-v2.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="./icon-v2.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;700;900&display=swap"
         rel="stylesheet">
-
     <style>
         :root {
             --ac-green: #7DE1A9;
-            --ac-bg-pattern: #8FD8AF;
             --ac-cream: #FFFEF2;
             --ac-yellow: #F9F195;
             --ac-brown: #796452;
             --ac-blue: #4FB5D9;
             --ac-dark: #58504A;
-            --ac-card-border: #E6E0C8;
         }
 
         * {
@@ -35,8 +30,7 @@
         body {
             font-family: 'Zen Maru Gothic', sans-serif;
             background-color: var(--ac-green);
-            background-image:
-                repeating-linear-gradient(45deg, transparent, transparent 20px, rgba(255, 255, 255, 0.2) 20px, rgba(255, 255, 255, 0.2) 40px);
+            background-image: repeating-linear-gradient(45deg, transparent, transparent 20px, rgba(255, 255, 255, 0.2) 20px, rgba(255, 255, 255, 0.2) 40px);
             min-height: 100vh;
             color: var(--ac-dark);
             overflow-x: hidden;
@@ -55,14 +49,6 @@
             z-index: 100;
         }
 
-        .update-pill {
-            font-size: 0.8rem;
-            color: white;
-            background: rgba(0, 0, 0, 0.2);
-            padding: 4px 10px;
-            border-radius: 12px;
-        }
-
         .city-selector {
             position: relative;
             display: inline-block;
@@ -70,8 +56,6 @@
 
         .city-selector select {
             appearance: none;
-            -webkit-appearance: none;
-            -moz-appearance: none;
             background: var(--ac-yellow);
             color: var(--ac-brown);
             padding: 5px 30px 5px 15px;
@@ -82,18 +66,13 @@
             border: 2px solid white;
             box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.1);
             cursor: pointer;
-            font-family: 'Zen Maru Gothic', sans-serif;
+            font-family: inherit;
             outline: none;
             transition: all 0.3s ease;
         }
 
         .city-selector select:hover {
             transform: rotate(-2deg) scale(1.05);
-            box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.15);
-        }
-
-        .city-selector select:active {
-            transform: rotate(-2deg) scale(0.98);
         }
 
         .city-selector::after {
@@ -105,6 +84,14 @@
             pointer-events: none;
             color: var(--ac-brown);
             font-size: 0.8rem;
+        }
+
+        .update-pill {
+            font-size: 0.8rem;
+            color: white;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 4px 10px;
+            border-radius: 12px;
         }
 
         .container {
@@ -322,12 +309,6 @@
     </div>
 
     <script>
-<<<<<<< HEAD
-        // API 基礎 URL - Zeabur 部署的後端 (使用 HTTPS)
-=======
-<<<<<<< HEAD
-        // API 基礎 URL - 本地後端
->>>>>>> 169d4cac667183718b9a7ccc8122c56cc97e53db
         const API_BASE_URL = "https://check-weather.zeabur.app/api/weather";
 
         function getApiUrl(cityName) {
@@ -345,15 +326,12 @@
         }
 
         function getAdvice(rainProb, maxTemp) {
-            let rainIcon = "🌂";
-            let rainText = "不用帶傘";
+            let rainIcon = "🌂", rainText = "不用帶傘";
             if (parseInt(rainProb) > 30) {
                 rainIcon = "☂️";
                 rainText = "記得帶傘!";
             }
-
-            let clothIcon = "👕";
-            let clothText = "舒適穿搭";
+            let clothIcon = "👕", clothText = "舒適穿搭";
             if (parseInt(maxTemp) >= 28) {
                 clothIcon = "🎽";
                 clothText = "短袖出發";
@@ -361,7 +339,6 @@
                 clothIcon = "🧥";
                 clothText = "加件外套";
             }
-
             return { rainIcon, rainText, clothIcon, clothText };
         }
 
@@ -374,19 +351,15 @@
             return "深夜";
         }
 
-        // 處理後端 API 回應資料
         function processBackendData(backendData) {
-            // 後端回應格式: { success: true, data: { forecasts: [...] } }
-            // 需要將溫度和降雨率的單位移除
             const forecasts = backendData.data.forecasts.map(f => ({
                 startTime: f.startTime,
                 endTime: f.endTime,
                 weather: f.weather,
-                rain: f.rain, // 後端已包含 %
-                minTemp: f.minTemp.replace('°C', ''), // 移除單位
-                maxTemp: f.maxTemp.replace('°C', '') // 移除單位
+                rain: f.rain,
+                minTemp: f.minTemp.replace('°C', ''),
+                maxTemp: f.maxTemp.replace('°C', '')
             }));
-
             return { forecasts };
         }
 
@@ -394,7 +367,6 @@
             const forecasts = data.forecasts;
             const current = forecasts[0];
             const others = forecasts.slice(1);
-
             const advice = getAdvice(current.rain, current.maxTemp);
             const period = getTimePeriod(current.startTime);
             const avgTemp = Math.round((parseInt(current.maxTemp) + parseInt(current.minTemp)) / 2);
@@ -407,7 +379,6 @@
                         <div class="hero-temp">${avgTemp}°</div>
                     </div>
                     <div class="hero-desc">${current.weather}</div>
-                    
                     <div class="advice-grid">
                         <div class="advice-item">
                             <div class="advice-icon">${advice.rainIcon}</div>
@@ -425,15 +396,12 @@
 
             const scrollContainer = document.getElementById('futureForecasts');
             scrollContainer.innerHTML = '';
-
             const todayDate = new Date().getDate();
 
             others.forEach(f => {
                 let p = getTimePeriod(f.startTime);
                 const fDate = new Date(f.startTime);
-                if (fDate.getDate() !== todayDate) {
-                    p = "明天" + p;
-                }
+                if (fDate.getDate() !== todayDate) p = "明天" + p;
 
                 scrollContainer.innerHTML += `
                     <div class="mini-card">
@@ -450,7 +418,6 @@
             const date = now.getDate();
             const dayIndex = now.getDay();
             const days = ["週日", "週一", "週二", "週三", "週四", "週五", "週六"];
-
             document.getElementById('updateTime').textContent = `${month}月${date}日 ${days[dayIndex]}`;
         }
 
@@ -460,36 +427,40 @@
                 document.getElementById('mainContent').style.display = 'none';
 
                 const delayPromise = new Promise(resolve => setTimeout(resolve, 1500));
-
                 const apiUrl = getApiUrl(cityName);
-                console.log('Fetching from:', apiUrl);
-                const fetchPromise = fetch(apiUrl).then(res => res.json());
+                console.log('🌐 Fetching:', apiUrl);
+
+                const fetchPromise = fetch(apiUrl).then(async res => {
+                    console.log('📡 Status:', res.status);
+                    const data = await res.json();
+                    if (!res.ok) {
+                        throw new Error(data.message || `HTTP ${res.status}`);
+                    }
+                    return data;
+                });
 
                 const [_, json] = await Promise.all([delayPromise, fetchPromise]);
+                console.log('📦 Response:', json);
 
-                console.log('API Response:', json);
-
-                // 檢查後端回應格式: { success: true, data: {...} }
-                if (json.success === true) {
+                if (json.success === true && json.data) {
                     const processedData = processBackendData(json);
                     renderWeather(processedData);
-
                     document.getElementById('loading').style.display = 'none';
                     document.getElementById('mainContent').style.display = 'block';
+                } else if (json.error || json.message) {
+                    throw new Error(json.message || json.error);
                 } else {
-                    throw new Error("API Error: " + (json.message || JSON.stringify(json)));
+                    throw new Error("未知錯誤");
                 }
             } catch (e) {
-                console.error('錯誤詳情:', e);
-                alert("天氣資料讀取失敗!\n錯誤: " + e.message + "\n請確認後端伺服器運行正常: https://check-weather.zeabur.app");
+                console.error('❌ Error:', e);
+                alert("天氣資料讀取失敗!\n" + e.message);
                 document.getElementById('loading').style.display = 'none';
             }
         }
 
         document.getElementById('citySelector')?.addEventListener('change', function (e) {
-            const selectedCity = e.target.value;
-            console.log('選擇的城市:', selectedCity);
-            fetchWeather(selectedCity);
+            fetchWeather(e.target.value);
         });
 
         document.addEventListener("DOMContentLoaded", fetchWeather);
