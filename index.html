@@ -68,6 +68,23 @@
             transform: rotate(-2deg);
             border: 2px solid white;
             box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .location-pill select {
+            background: transparent;
+            border: none;
+            font-family: inherit;
+            font-size: inherit;
+            font-weight: inherit;
+            color: inherit;
+            outline: none;
+            cursor: pointer;
+            appearance: none;
+            -webkit-appearance: none;
+            text-align: center;
         }
 
         .update-pill {
@@ -264,7 +281,12 @@
         <p style="color: white; font-weight: bold; margin-top: 20px;">正在觀測雲的流動...</p>
     </div>
     <div class="status-bar">
-        <div class="location-pill">📍 台北</div>
+        <div class="location-pill">
+            📍
+            <select id="citySelect">
+                <!-- Options will be populated by JS -->
+            </select>
+        </div>
         <div id="updateTime" class="update-pill">更新中...</div>
     </div>
 
@@ -280,7 +302,29 @@
     </div>
 
     <script>
-        const API_URL = "https://check-weather.zeabur.app/api/weather/kaohsiung";
+        //const CWA_API_URL = "https://opendata.cwa.gov.tw/api/v1/rest/datastore/F-C0032-001";
+        const CWA_API_URL = "https://check-weather.zeabur.app/api/weather/kaohsiung";
+        const CITIES = [
+            "臺北市", "新北市", "桃園市", "臺中市", "臺南市", "高雄市",
+            "基隆市", "新竹市", "嘉義市",
+            "新竹縣", "苗栗縣", "彰化縣", "南投縣", "雲林縣", "嘉義縣",
+            "屏東縣", "宜蘭縣", "花蓮縣", "臺東縣", "澎湖縣", "金門縣", "連江縣"
+        ];
+
+        function initCitySelect() {
+            const select = document.getElementById('citySelect');
+            CITIES.forEach(city => {
+                const option = document.createElement('option');
+                option.value = city;
+                option.textContent = city;
+                if (city === "臺北市") option.selected = true;
+                select.appendChild(option);
+            });
+
+            select.addEventListener('change', (e) => {
+                fetchWeather(e.target.value);
+            });
+        }
 
         function getWeatherIcon(weather) {
             if (!weather) return "🌤️";
@@ -322,12 +366,40 @@
             return "深夜";
         }
 
+        function transformCWAData(cwaData) {
+            const location = cwaData.records.location[0];
+            const weatherElements = location.weatherElement;
+
+            // Helper to find element by name
+            const getEl = (name) => weatherElements.find(e => e.elementName === name).time;
+
+            const wx = getEl("Wx");
+            const pop = getEl("PoP");
+            const minT = getEl("MinT");
+            const maxT = getEl("MaxT");
+
+            const forecasts = wx.map((item, index) => {
+                return {
+                    startTime: item.startTime,
+                    endTime: item.endTime,
+                    weather: item.parameter.parameterName,
+                    rain: pop[index].parameter.parameterName + "%",
+                    minTemp: minT[index].parameter.parameterName,
+                    maxTemp: maxT[index].parameter.parameterName
+                };
+            });
+
+            return { forecasts };
+        }
+
         function renderWeather(data) {
             const forecasts = data.forecasts;
             const current = forecasts[0];
             const others = forecasts.slice(1);
 
             // 1. 渲染 Hero Card (主畫面)
+            // CWA API PoP is percentage string e.g. "20", sometimes just "20" without %. 
+            // My transform added %. Let's strip it for calculation if needed, but getAdvice uses parseInt which handles "20%" fine.
             const advice = getAdvice(current.rain, current.maxTemp);
             const period = getTimePeriod(current.startTime);
             const avgTemp = Math.round((parseInt(current.maxTemp) + parseInt(current.minTemp)) / 2);
@@ -392,34 +464,42 @@
             document.getElementById('updateTime').textContent = `${month}月${date}日 ${days[dayIndex]}`;
         }
 
-        async function fetchWeather() {
+        async function fetchWeather(city = "臺北市") {
             try {
+                document.getElementById('loading').style.display = 'flex';
+                document.getElementById('mainContent').style.display = 'none';
+
                 // 1. 定義「最低等待時間」：1500 毫秒 (1.5秒)
                 const delayPromise = new Promise(resolve => setTimeout(resolve, 1500));
 
                 // 2. 定義「抓取資料」的工作
-                const fetchPromise = fetch(API_URL).then(res => res.json());
+                const url = `${CWA_API_URL}?Authorization=${API_KEY}&locationName=${encodeURIComponent(city)}`;
+                const fetchPromise = fetch(url).then(res => res.json());
 
                 // 3. Promise.all 會等待「兩個都完成」才會往下走
-                // result 陣列裡，第一個是 delay 的結果(沒用到)，第二個是 api 的 json 資料
                 const [_, json] = await Promise.all([delayPromise, fetchPromise]);
 
-                if (json.success) {
-                    renderWeather(json.data);
+                if (json.success === "true") {
+                    const transformedData = transformCWAData(json);
+                    renderWeather(transformedData);
 
                     // 資料處理好後，隱藏 Loading，顯示主畫面
                     document.getElementById('loading').style.display = 'none';
                     document.getElementById('mainContent').style.display = 'block';
                 } else {
-                    throw new Error("API Error");
+                    throw new Error("API Error: " + JSON.stringify(json));
                 }
             } catch (e) {
                 console.error(e);
-                alert("天氣資料讀取失敗！");
+                alert("天氣資料讀取失敗！請檢查 API Key 或網路連線。");
+                document.getElementById('loading').style.display = 'none';
             }
         }
 
-        document.addEventListener("DOMContentLoaded", fetchWeather);
+        document.addEventListener("DOMContentLoaded", () => {
+            initCitySelect();
+            fetchWeather();
+        });
     </script>
 </body>
 
