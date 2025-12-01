@@ -78,6 +78,51 @@
             border-radius: 12px;
         }
 
+        /* 城市選擇器樣式 */
+        .city-selector {
+            position: relative;
+            display: inline-block;
+        }
+
+        .city-selector select {
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            background: var(--ac-yellow);
+            color: var(--ac-brown);
+            padding: 5px 30px 5px 15px;
+            border-radius: 20px;
+            font-weight: 900;
+            font-size: 1.1rem;
+            transform: rotate(-2deg);
+            border: 2px solid white;
+            box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.1);
+            cursor: pointer;
+            font-family: 'Zen Maru Gothic', sans-serif;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .city-selector select:hover {
+            transform: rotate(-2deg) scale(1.05);
+            box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.15);
+        }
+
+        .city-selector select:active {
+            transform: rotate(-2deg) scale(0.98);
+        }
+
+        .city-selector::after {
+            content: '▼';
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            pointer-events: none;
+            color: var(--ac-brown);
+            font-size: 0.8rem;
+        }
+
         .container {
             padding: 20px;
             max-width: 600px;
@@ -264,7 +309,32 @@
         <p style="color: white; font-weight: bold; margin-top: 20px;">正在觀測雲的流動...</p>
     </div>
     <div class="status-bar">
-        <div class="location-pill">📍 台北</div>
+        <div class="city-selector">
+            <select id="citySelector">
+                <option value="臺北市" selected>📍 臺北市</option>
+                <option value="新北市">📍 新北市</option>
+                <option value="桃園市">📍 桃園市</option>
+                <option value="臺中市">📍 臺中市</option>
+                <option value="臺南市">📍 臺南市</option>
+                <option value="高雄市">📍 高雄市</option>
+                <option value="基隆市">📍 基隆市</option>
+                <option value="新竹市">📍 新竹市</option>
+                <option value="嘉義市">📍 嘉義市</option>
+                <option value="新竹縣">📍 新竹縣</option>
+                <option value="苗栗縣">📍 苗栗縣</option>
+                <option value="彰化縣">📍 彰化縣</option>
+                <option value="南投縣">📍 南投縣</option>
+                <option value="雲林縣">📍 雲林縣</option>
+                <option value="嘉義縣">📍 嘉義縣</option>
+                <option value="屏東縣">📍 屏東縣</option>
+                <option value="宜蘭縣">📍 宜蘭縣</option>
+                <option value="花蓮縣">📍 花蓮縣</option>
+                <option value="臺東縣">📍 臺東縣</option>
+                <option value="澎湖縣">📍 澎湖縣</option>
+                <option value="金門縣">📍 金門縣</option>
+                <option value="連江縣">📍 連江縣</option>
+            </select>
+        </div>
         <div id="updateTime" class="update-pill">更新中...</div>
     </div>
 
@@ -280,7 +350,14 @@
     </div>
 
     <script>
-        const API_URL = "https://check-weather.zeabur.app/api/weather/kaohsiung";
+        // API 基礎 URL - 本地後端
+        const API_BASE_URL = "http://localhost:2000/api/weather";
+
+        // 根據城市生成API URL - 直接使用中文城市名稱
+        function getApiUrl(cityName) {
+            // 將城市名稱進行 URL 編碼，以支援中文
+            return `${API_BASE_URL}/${encodeURIComponent(cityName)}`;
+        }
 
         function getWeatherIcon(weather) {
             if (!weather) return "🌤️";
@@ -350,7 +427,7 @@
                                 <div class="advice-item">
                                     <div class="advice-icon">${advice.clothIcon}</div>
                                     <div class="advice-text">${advice.clothText}</div>
-                                    <div style="font-size:0.7rem; color:#999">最高溫 ${current.maxTemp}°</div>
+                                    <div style="font-size:0.7rem; color:#999">最高溫 ${current.maxTemp}</div>
                                 </div>
                             </div>
                         </div>
@@ -376,7 +453,7 @@
                             <div class="mini-card">
                                 <div class="mini-time">${p}</div>
                                 <div class="mini-icon">${getWeatherIcon(f.weather)}</div>
-                                <div class="mini-temp">${f.minTemp}° - ${f.maxTemp}°</div>
+                                <div class="mini-temp">${f.minTemp} - ${f.maxTemp}</div>
                                 <div style="font-size:0.8rem; color:#888; margin-top:5px;">💧${f.rain}</div>
                             </div>
                         `;
@@ -392,13 +469,19 @@
             document.getElementById('updateTime').textContent = `${month}月${date}日 ${days[dayIndex]}`;
         }
 
-        async function fetchWeather() {
+        async function fetchWeather(cityName = "臺北市") {
             try {
+                // 顯示loading畫面
+                document.getElementById('loading').style.display = 'flex';
+                document.getElementById('mainContent').style.display = 'none';
+
                 // 1. 定義「最低等待時間」：1500 毫秒 (1.5秒)
                 const delayPromise = new Promise(resolve => setTimeout(resolve, 1500));
 
-                // 2. 定義「抓取資料」的工作
-                const fetchPromise = fetch(API_URL).then(res => res.json());
+                // 2. 定義「抓取資料」的工作，使用動態API URL
+                const apiUrl = getApiUrl(cityName);
+                console.log('Fetching from:', apiUrl);
+                const fetchPromise = fetch(apiUrl).then(res => res.json());
 
                 // 3. Promise.all 會等待「兩個都完成」才會往下走
                 // result 陣列裡，第一個是 delay 的結果(沒用到)，第二個是 api 的 json 資料
@@ -415,9 +498,19 @@
                 }
             } catch (e) {
                 console.error(e);
-                alert("天氣資料讀取失敗！");
+                alert("天氣資料讀取失敗！請確認後端伺服器已啟動並運行在 http://localhost:2000");
+                // 發生錯誤時也要隱藏loading
+                document.getElementById('loading').style.display = 'none';
             }
         }
+
+        // 城市選擇器事件監聽
+        document.getElementById('citySelector')?.addEventListener('change', function (e) {
+            const selectedCity = e.target.value;
+            console.log('選擇的城市：', selectedCity);
+            // 重新取得選中城市的天氣資料
+            fetchWeather(selectedCity);
+        });
 
         document.addEventListener("DOMContentLoaded", fetchWeather);
     </script>
